@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Logaritmos (Método de Tablas)</title>
+    <title>Calculadora de Logaritmos y Antilogaritmos</title>
     <style>
         * {
             box-sizing: border-box;
@@ -177,14 +177,15 @@
             font-weight: 700;
         }
         .big-number {
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: 900;
             color: var(--accent);
             font-family: 'Courier New', Courier, monospace;
-            letter-spacing: 3px;
+            letter-spacing: 1px;
             margin: 20px 0;
             text-shadow: 0 4px 15px rgba(88, 68, 221, 0.15);
             animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            word-wrap: break-word;
         }
         @keyframes scaleIn {
             from { opacity: 0; transform: scale(0.9); }
@@ -415,7 +416,7 @@
                 padding: 12px;
             }
             .big-number {
-                font-size: 2rem;
+                font-size: 1.8rem;
             }
             input {
                 font-size: 1rem;
@@ -425,7 +426,7 @@
                 max-height: 300px;
             }
         }
-        /* Procedural example styles (mini table used in procedure area) */
+        /* Procedural example styles */
         .procedure-example {
             margin-top: 8px;
             padding: 12px;
@@ -463,9 +464,12 @@
         }
         .procedure-row-highlight {
             background: linear-gradient(90deg, var(--accent), var(--accent-2));
-            color: #fff;
+            color: #fff !important;
             font-weight: 700;
             box-shadow: inset 0 0 0 2px rgba(255,255,255,0.03);
+        }
+        .procedure-row-highlight td {
+            color: #fff !important;
         }
         .procedure-example .example-legend {
             font-size: 0.92rem;
@@ -481,20 +485,20 @@
         }
         body.dark .procedure-example-table td { color: #cbd5e1; }
         body.dark .procedure-row-highlight { box-shadow: inset 0 0 0 2px rgba(255,255,255,0.06); }
-        /* Utility: visually hidden for screen-readers */
         .visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🧮 Calculadora de Logaritmos</h1>
-    <p class="subtitle">Método de Tablas (Base 10)</p>
+    <h1>🧮 Calculadora</h1>
+    <p class="subtitle" id="main-subtitle">Logaritmos (Base 10) y Antilogaritmos</p>
     
     <div class="input-group">
-        <label for="numberInput">Ingresa un número (N > 0):</label>
-        <span style="display:block;font-size:0.95em;color:var(--text-light);margin-bottom:0.5em;">Ejemplo: 0.001349, 134.9, 5, 0.5, 1000</span>
-        <input type="number" id="numberInput" placeholder="Ej: 0.001349 o 134.9" step="any" min="0" max="1e308">
+        <label for="numberInput" id="inputLabel">Ingresa un número (N > 0):</label>
+        <span id="inputHelper" style="display:block;font-size:0.95em;color:var(--text-light);margin-bottom:0.5em;">Ejemplo: 0.001349, 134.9, 5, 0.5, 1000</span>
+        <input type="number" id="numberInput" placeholder="Ej: 134.9" step="any">
+        
         <div class="show-procedure">
             <input type="checkbox" id="showProcedure">
             <label for="showProcedure" style="margin:0; font-weight:600; color:var(--accent); cursor:pointer;">📋 Mostrar procedimiento manual de tabla</label>
@@ -519,315 +523,355 @@
         </div>
     </div>
 
-    <button onclick="calculateLog()" id="computeBtn">Calcular y Explicar</button>
+    <button onclick="calculate()" id="computeBtn">Calcular</button>
     <span style="display:block;text-align:center;color:#48c6ef;font-size:0.98em;margin-top:0.7em;">Presiona <b>Enter</b> para calcular rápidamente</span>
 
     <div id="result-area">
         <div class="step-box" aria-live="polite">
-            <span class="step-title">📍 Paso 1: Calcular la Característica (Parte Entera)</span>
+            <span class="step-title" id="step1-title">📍 Paso 1: Característica</span>
             <div id="step1-text"></div>
         </div>
 
         <div class="step-box" aria-live="polite">
-            <span class="step-title">📊 Paso 2: Obtener la Mantisa (Buscar en la Tabla)</span>
+            <span class="step-title" id="step2-title">📊 Paso 2: Mantisa</span>
             <div id="step2-text"></div>
         </div>
 
         <div id="procedure-area" class="procedure-area" style="display:none;"></div>
 
         <div class="step-box" style="margin-top:12px;">
-            <span class="step-title">🔎 Simulación de Tabla (4 dígitos)</span>
-            <div id="table-sim" style="font-family:'Courier New',monospace; font-size:0.98rem; color:var(--text); margin-top:12px;">
-                📝 Ingresa un número para ver la simulación de la tabla de logaritmos.
-            </div>
+            <span class="step-title" id="table-sim-title">🔎 Simulación de Tabla</span>
+            <div id="table-sim" style="font-family:'Courier New',monospace; font-size:0.98rem; color:var(--text); margin-top:12px;"></div>
         </div>
 
         <div class="final-result">
-            <div class="result-label">Resultado Final - Notación Académica de Tabla</div>
-            <div class="big-number" id="final-display" aria-label="Resultado en notación de tabla"></div>
+            <div class="result-label" id="result-label-main">Resultado Final</div>
+            <div class="big-number" id="final-display" aria-label="Resultado"></div>
             <div class="decimal-result">
-                Equivalente en notación decimal: <span class="decimal-value" id="decimal-display" aria-label="Resultado decimal"></span>
+                Equivalente decimal: <span class="decimal-value" id="decimal-display" aria-label="Resultado decimal"></span>
             </div>
         </div>
         
-        <p class="note">
-            💡 <strong>Nota:</strong> La mantisa se calcula matemáticamente para simular el resultado de consultar una tabla de logaritmos estándar.
-        </p>
-        
-        <div class="info-box">
-            <strong>ℹ️ ¿Cómo se lee?</strong><br>
-            <span style="color:#6c63ff;font-weight:bold;">Si ves <span style="text-decoration:overline">3</span>.1300</span> significa: Característica -3, Mantisa .1300<br>
-            <span style="color:#48c6ef;font-weight:bold;">Si ves 2.1300</span> significa: Característica 2, Mantisa .1300<br>
-            <span style="color:#888;font-size:0.95em;">La barra sobre el número indica que la característica es negativa (notación de tabla).</span>
+        <div class="info-box" id="info-box-content">
+            <!-- Dinámico -->
         </div>
     </div>
 </div>
 
 <script>
-    function createProcedureExampleHTML(sigDigits, key, mantissaStr) {
-        // genera un pequeño bloque HTML (mini-tabla) que simula una tabla de logaritmos
-        try {
-            const rows = [];
-            for (let delta = -2; delta <= 2; delta++) {
-                const k = key + delta;
-                if (k < 1000) continue; // tabla de 4 dígitos
-                const s = String(k).padStart(4, '0');
-                const nval = Number(s[0] + '.' + s.substring(1));
-                const mant = Math.log10(nval).toFixed(4).substring(1);
-                rows.push({k: s, mant});
-            }
+    const LOG_MODE = 'log';
+    const ANTILOG_MODE = 'antilog';
 
-            const legendId = 'proc-legend-' + String(sigDigits).replace(/\s+/g,'-');
-            let html = `<div class="procedure-example" role="img" tabindex="0" aria-describedby="${legendId}" aria-label="Mini tabla de logaritmos con fila ${sigDigits} resaltada">`;
-            html += `<div class="procedure-example-title">Mini tabla — 4 dígitos (ejemplo)</div>`;
-            html += `<table class="procedure-example-table" role="table" aria-hidden="false"><thead><tr><th>Fila</th><th>Mantisa</th></tr></thead><tbody>`;
-            if (rows.length === 0) {
-                // fallback sample: 1000..1004
-                for (let i = 1000; i <= 1004; i++) {
-                    const s = String(i).padStart(4,'0');
-                    const nval = Number(s[0] + '.' + s.substring(1));
-                    const mant = Math.log10(nval).toFixed(4).substring(1);
-                    rows.push({k: s, mant});
-                }
-            }
+    // UI Updates based on mode
+    function updateUIForMode() {
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const inputLabel = document.getElementById('inputLabel');
+        const inputHelper = document.getElementById('inputHelper');
+        const numberInput = document.getElementById('numberInput');
+        const resultArea = document.getElementById('result-area');
 
-            rows.forEach(r => {
-                const isKey = r.k === String(sigDigits).padStart(4, '0');
-                html += `<tr ${isKey ? 'class="procedure-row-highlight"' : ''}><td>${r.k}</td><td>${r.mant}</td></tr>`;
-            });
-            html += `</tbody></table>`;
-            html += `<div id="${legendId}" class="example-legend"><div>Fila resaltada: <strong>${sigDigits}</strong></div><div>Mantisa: <strong style="color:var(--accent)">${mantissaStr}</strong></div></div>`;
-            html += `<div class="visually-hidden">Mini tabla de ejemplo: filas ${rows.map(r=>r.k).join(', ')} con la fila ${sigDigits} resaltada que contiene la mantisa ${mantissaStr}.</div>`;
-            html += `</div>`;
-            return html;
-        } catch (e) {
-            return `<div style="color:var(--text)">Ejemplo no disponible.</div>`;
+        // Limpiar resultados al cambiar modo
+        resultArea.style.display = 'none';
+        numberInput.value = '';
+
+        if (mode === LOG_MODE) {
+            inputLabel.textContent = "Ingresa un número (N > 0):";
+            inputHelper.textContent = "Ejemplo: 0.001349, 134.9, 5, 0.5";
+            numberInput.placeholder = "Ej: 134.9";
+            document.getElementById('main-subtitle').textContent = "Calcular Logaritmo (Base 10)";
+        } else {
+            inputLabel.textContent = "Ingresa el logaritmo (L):";
+            inputHelper.textContent = "Puede ser positivo o negativo (ej: 2.13, -1.5, 0.45)";
+            numberInput.placeholder = "Ej: 2.1303";
+            document.getElementById('main-subtitle').textContent = "Calcular Antilogaritmo (Encontrar número)";
         }
     }
 
-    function calculateLog() {
-        const input = document.getElementById('numberInput').value.trim();
-        const mode = document.querySelector('input[name="mode"]:checked').value;
-        const n = parseFloat(input);
-        const resultArea = document.getElementById('result-area');
-        const showProcedure = document.getElementById('showProcedure').checked;
-        const procedureArea = document.getElementById('procedure-area');
-        const tableSim = document.getElementById('table-sim');
+    function createMiniTable(targetNumStr, targetMantissaStr, mode) {
+        // Genera HTML para la simulación de tabla
+        let rows = [];
+        let highlightKey = "";
+        
+        if (mode === LOG_MODE) {
+            // Tabla Log: Filas son Números (10-99), Contenido son Mantisas
+            // Usamos los primeros dígitos de targetNumStr para simular filas
+            let key = parseInt(targetNumStr.substring(0, 4)); // Digitos significativos
+            if (isNaN(key)) key = 1000;
+            
+            highlightKey = String(key).padStart(4, '0');
 
-        // Validación de entrada
-        if (isNaN(n) || n <= 0) {
-            alert("Por favor ingresa un número positivo mayor que 0.");
+            for (let i = -2; i <= 2; i++) {
+                let currentKey = key + i;
+                if (currentKey < 1000) continue;
+                let s = String(currentKey).padStart(4, '0');
+                let nval = Number(s[0] + '.' + s.substring(1));
+                let m = Math.log10(nval).toFixed(4).substring(1); // .XXXX
+                rows.push({ k: s, val: m });
+            }
+        } else {
+            // Tabla Antilog (usualmente): Filas son Mantisas (.00 - .99), Contenido son Digitos
+            // Simulamos: Fila = Mantisa aproximada, Contenido = Dígitos del número
+            // targetMantissaStr es "XXXX" (ej: "3010")
+            let mantVal = parseInt(targetMantissaStr, 10);
+            
+            // Queremos mostrar mantisas alrededor de la nuestra
+            for (let i = -2; i <= 2; i++) {
+                let currentMant = mantVal + i;
+                if (currentMant < 0) continue;
+                
+                let mantStr = String(currentMant).padStart(4, '0');
+                // Calcular qué número produce esta mantisa: 10^(0.mantStr)
+                let mFloat = parseFloat("0." + mantStr);
+                let num = Math.pow(10, mFloat);
+                
+                // Los dígitos del número resultante (ej: 2000 para .3010)
+                // Normalizamos para mostrar 4 dígitos (ej: 1.005 -> 1005)
+                let digits = num.toFixed(5).replace('.','').substring(0,4);
+                
+                rows.push({ k: "." + mantStr, val: digits });
+            }
+            highlightKey = "." + targetMantissaStr;
+        }
+
+        let html = `<table class="procedure-example-table">
+            <thead><tr><th>${mode === LOG_MODE ? 'Número (N)' : 'Mantisa'}</th><th>${mode === LOG_MODE ? 'Mantisa' : 'Dígitos de N'}</th></tr></thead>
+            <tbody>`;
+            
+        rows.forEach(row => {
+            const isMatch = row.k === highlightKey;
+            const style = isMatch ? 'class="procedure-row-highlight"' : '';
+            html += `<tr ${style}><td>${row.k}</td><td>${row.val}</td></tr>`;
+        });
+        
+        html += `</tbody></table>`;
+        if(mode === LOG_MODE) {
+            html += `<div class="example-legend" style="margin-top:5px"><small>Buscamos los dígitos ${highlightKey} → Encontramos mantisa .${targetMantissaStr}</small></div>`;
+        } else {
+            html += `<div class="example-legend" style="margin-top:5px"><small>Buscamos mantisa ${highlightKey} → Encontramos dígitos ${rows.find(r=>r.k===highlightKey)?.val}</small></div>`;
+        }
+        
+        return html;
+    }
+
+    function calculate() {
+        const inputStr = document.getElementById('numberInput').value.trim();
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const n = parseFloat(inputStr);
+        const resultArea = document.getElementById('result-area');
+        const showProc = document.getElementById('showProcedure').checked;
+
+        // Reset areas
+        document.getElementById('step1-text').innerHTML = "";
+        document.getElementById('step2-text').innerHTML = "";
+        document.getElementById('procedure-area').style.display = 'none';
+        document.getElementById('final-display').innerHTML = "";
+        document.getElementById('table-sim').innerHTML = "";
+
+        if (isNaN(n)) {
+            alert("Por favor ingresa un número válido.");
             resultArea.style.display = 'none';
-            procedureArea.style.display = 'none';
             return;
         }
 
-        // Si estamos en modo 'antilog', la entrada es un logaritmo (valor L)
-        let modeLabel = 'Logaritmo';
-        if (mode === 'antilog') {
-            modeLabel = 'Antilogaritmo';
-        }
-
-        let logValue, characteristic, explanation = "", zerosCount = 0;
-
-        if (mode === 'log') {
-            // Cálculo matemático real del logaritmo base 10 a partir del número
-            logValue = Math.log10(n);
-
-            // PASO 1: CALCULAR LA CARACTERÍSTICA CON REGLAS ESTRICTAS
-            if (n >= 1) {
-                // Regla 1: Para números >= 1
-                let integerPartStr = String(Math.floor(n));
-                let numDigits;
-                // Manejar notación científica en la entrada (ej. 1.23e5)
-                if (/e/i.test(input)) {
-                    const m = input.match(/([0-9]+(?:\.[0-9]+)?)e([+-]?\d+)/i);
-                    if (m) {
-                        const sig = m[1];
-                        const exp = parseInt(m[2], 10);
-                        const intPartOfSig = sig.split('.')[0];
-                        numDigits = Math.abs(exp) + intPartOfSig.replace(/^0+/, '').length;
-                        integerPartStr = (sig.replace('.', '') + 'e' + exp); // mostrar aproximación
-                    } else {
-                        numDigits = integerPartStr.length;
-                    }
-                } else {
-                    numDigits = integerPartStr.length;
-                }
-                characteristic = numDigits - 1;
-                explanation = `El número es <b>mayor o igual a 1</b>.<br>
-                              La parte entera tiene <b>${numDigits}</b> dígito(s): <b>${integerPartStr}</b>.<br>
-                              Fórmula: Dígitos - 1 = ${numDigits} - 1 = <b>${characteristic}</b>`;
-            } else {
-                // Regla 2: Para números < 1
-                const strNumber = input.toString();
-                // Manejar notación científica (ej: 1.349e-3)
-                if (/e/i.test(strNumber)) {
-                    const m = strNumber.match(/([0-9]+(?:\.[0-9]+)?)e([+-]?\d+)/i);
-                    if (m) {
-                        const exp = parseInt(m[2], 10);
-                        if (exp < 0) {
-                            // Por ejemplo 1.349e-3 -> zerosCount = |exp| - 1
-                            zerosCount = Math.abs(exp) - 1;
-                        }
-                    }
-                } else {
-                    const parts = strNumber.split('.');
-                    if (parts.length === 2) {
-                        // Contar los ceros después del punto hasta la primera cifra significativa
-                        const decimalPart = parts[1];
-                        for (let i = 0; i < decimalPart.length; i++) {
-                            if (decimalPart[i] === '0') {
-                                zerosCount++;
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-                }
-                characteristic = -(zerosCount + 1);
-                explanation = `El número es <b>menor que 1</b>.<br>
-                              Después del punto hay <b>${zerosCount}</b> cero(s) antes de la primera cifra significativa.<br>
-                              Fórmula: -(Ceros + 1) = -(${zerosCount} + 1) = <b>${characteristic}</b><br>
-                              Notación de tabla: Se escribe como <span style="text-decoration:overline">${Math.abs(characteristic)}</span>`;
-            }
+        if (mode === LOG_MODE) {
+            calculateLogarithm(n, inputStr, showProc);
         } else {
-            // Modo antilog: la entrada es el valor del logaritmo L
-            const L = parseFloat(input);
-            if (isNaN(L)) {
-                alert('Por favor ingresa un valor numérico para el antilogaritmo.');
-                resultArea.style.display = 'none';
-                procedureArea.style.display = 'none';
-                tableSim.innerText = '';
-                return;
-            }
-            logValue = L;
-            // Para antilog, la característica es la parte entera (floor)
-            characteristic = Math.floor(L);
-            const mant = +( (L - characteristic).toFixed(6) );
-            // Calcular el número original
-            const N = Math.pow(10, L);
-            explanation = `Modo: <b>Antilogaritmo</b>.<br>Se separa el logaritmo en característica = <b>${characteristic}</b> y mantisa = <b>${mant.toFixed(6)}</b>.<br>El número original es: <b>N = 10<sup>${L}</sup> = ${N.toPrecision(8)}</b>`;
+            calculateAntilogarithm(n, showProc);
         }
-
-        // PASO 2: CALCULAR LA MANTISA
-        // La mantisa SIEMPRE es positiva: mantisa = logTotal - característica
-        const mantissa = +(logValue - characteristic);
-        const mantissaFormatted = mantissa.toFixed(4);
-        const mantissaString = mantissaFormatted.substring(1); // ".XXXX" formato
-
-        // Extraer dígitos significativos para explicación
-        let strN;
-        if (mode === 'antilog') {
-            // Para antilog, usar el número reconstruido
-            strN = Math.pow(10, logValue).toString().replace('.', '').replace(/^0+/, '');
-        } else {
-            strN = input.toString().replace('.', '').replace(/^0+/, '');
-        }
-        let significantDigits = strN.substring(0, 4);
-        significantDigits = significantDigits.padEnd(4, '0');
-
-        // PASO 3: GENERAR VISUALIZACIÓN
-
-        // Explicación Paso 1
-        document.getElementById('step1-text').innerHTML = explanation;
-
-        // Explicación Paso 2
-        if (mode === 'antilog') {
-            document.getElementById('step2-text').innerHTML = `
-                Para reconstruir el número, usamos la característica y mantisa:<br>
-                <b>N = 10<sup>${characteristic} + ${mantissaString}</sup> = ${Math.pow(10, logValue).toPrecision(8)}</b><br>
-                <span style="font-size: 0.85rem; color: #555;">Matemáticamente: 10<sup>${logValue.toFixed(6)}</sup> = ${Math.pow(10, logValue).toPrecision(8)}</span>`;
-        } else {
-            document.getElementById('step2-text').innerHTML = `
-                Para encontrar la mantisa, buscamos los dígitos significativos: <b>${significantDigits}</b> en una tabla de logaritmos.<br>
-                La mantisa (siempre positiva) es: <b>${mantissaString}</b><br>
-                <span style="font-size: 0.85rem; color: #555;">Matemáticamente: log(${n}) - ${characteristic} = ${logValue.toFixed(6)} - ${characteristic} = ${mantissa.toFixed(6)}</span>`;
-        }
-
-        // Resultado final en notación de tabla
-        let finalDisplay = "";
-        if (mode === 'antilog') {
-            // Mostrar el número reconstruido y la notación
-            finalDisplay = `<span style="font-size:1.15em;font-weight:700;color:var(--accent)">${Math.pow(10, logValue).toPrecision(8)}</span> <span style="font-size:0.95em;color:var(--text-light)">(N = 10<sup>${logValue.toFixed(4)}</sup>)</span>`;
-        } else {
-            if (characteristic < 0) {
-                finalDisplay = `<span class="bar-notation">${Math.abs(characteristic)}</span>${mantissaString}`;
-            } else {
-                finalDisplay = `${characteristic}${mantissaString}`;
-            }
-        }
-        document.getElementById('final-display').innerHTML = finalDisplay;
-
-        // Resultado en notación decimal (conversión estándar)
-        if (mode === 'antilog') {
-            document.getElementById('decimal-display').innerText = Math.pow(10, logValue).toPrecision(8);
-        } else {
-            const decimalNotation = logValue.toFixed(4);
-            document.getElementById('decimal-display').innerText = decimalNotation;
-        }
-
-        // Mostrar procedimiento manual si el usuario lo solicita
-        if (showProcedure) {
-            let procedureHTML = `<b>Simulación de consulta en tabla de logaritmos:</b><br><br>`;
-            procedureHTML += `1️⃣ <b>Identifica los dígitos significativos:</b> <span style='color:var(--accent);font-weight:bold;'>${significantDigits}</span><br>`;
-            procedureHTML += `2️⃣ <b>Busca la fila correspondiente en la tabla:</b> <span style='background:var(--accent-2);color:#fff;padding:2px 6px;border-radius:4px;'>${significantDigits}</span><br>`;
-            procedureHTML += `3️⃣ <b>Lee la mantisa en la tabla:</b> <span style='color:var(--accent);font-weight:bold;'>${mantissaString}</span> <span style='font-size:0.95em;color:var(--muted);'>(simulada matemáticamente)</span><br>`;
-            procedureHTML += `<br>📚 <i>En una tabla real, buscarías la secuencia <b>${significantDigits}</b> en la columna de la tabla y copiarías el valor de la mantisa correspondiente.</i><br>`;
-            procedureHTML += `<br>🔎 <b>Ejemplo visual:</b><br>` + createProcedureExampleHTML(significantDigits, parseInt(significantDigits,10), mantissaString);
-            procedureArea.innerHTML = procedureHTML;
-            procedureArea.style.display = 'block';
-        } else {
-            procedureArea.style.display = 'none';
-        }
-
         resultArea.style.display = 'block';
-
-        // Simulación de tabla: generar filas cercanas y resaltar
-        try {
-            // construir número normalizado a partir de significantDigits: d1.d234
-            const d1 = significantDigits[0];
-            const normalized = Number(d1 + '.' + significantDigits.substring(1));
-            const rows = [];
-            const key = parseInt(significantDigits, 10);
-            for (let delta = -2; delta <= 2; delta++) {
-                const k = key + delta;
-                if (k < 1000) continue;
-                const s = String(k).padStart(4, '0');
-                const nval = Number(s[0] + '.' + s.substring(1));
-                const mant = Math.log10(nval).toFixed(4).substring(1);
-                rows.push({k: s, mant});
-            }
-            let tableHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.95rem;">';
-            for (const r of rows) {
-                const highlight = (r.k === String(key)) ? 'background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;font-weight:700;' : 'background:transparent;';
-                tableHTML += `<tr style="height:34px;${highlight}"><td style="padding:6px 8px;border-bottom:1px solid rgba(0,0,0,0.04);width:60px">${r.k}</td><td style="padding:6px 8px;border-bottom:1px solid rgba(0,0,0,0.04);">${r.mant}</td></tr>`;
-            }
-            tableHTML += '</table>';
-            tableSim.innerHTML = tableHTML;
-        } catch (e) {
-            tableSim.innerText = 'No se pudo simular la tabla.';
-        }
     }
 
-    // Permitir calcular presionando Enter y mostrar procedimiento al cambiar el checkbox
+    function calculateLogarithm(n, inputStr, showProc) {
+        if (n <= 0) {
+            alert("El logaritmo solo está definido para números positivos.");
+            document.getElementById('result-area').style.display = 'none';
+            return;
+        }
+
+        const logVal = Math.log10(n);
+        let charVal, mantVal;
+        let step1HTML = "";
+
+        // Paso 1: Característica
+        if (n >= 1) {
+            // Parte entera
+            let intPart = String(Math.floor(n));
+            if (inputStr.toLowerCase().includes('e')) {
+                // Manejo básico de notación científica para contar dígitos
+                const [base, exp] = inputStr.toLowerCase().split('e');
+                // Aproximación rápida para la demo
+                intPart = "1".padEnd(parseInt(exp)+1, '0'); // Dummy visualization for magnitude
+                step1HTML = `El número está en notación científica. Exponente aproximado determina dígitos.<br>
+                             Dígitos enteros estimados: <b>${parseInt(exp)+1}</b>.<br>
+                             Característica = Dígitos - 1 = <b>${parseInt(exp)}</b>`;
+                charVal = parseInt(exp);
+            } else {
+                const digits = intPart.length;
+                charVal = digits - 1;
+                step1HTML = `El número es ≥ 1. Tiene <b>${digits}</b> dígito(s) en la parte entera (${intPart}).<br>
+                             Fórmula: (Dígitos - 1) → ${digits} - 1 = <b>${charVal}</b>`;
+            }
+        } else {
+            // Menor que 1
+            let zeros = 0;
+            // Hack simple para contar ceros post-punto decimal
+            const decimalPart = inputStr.split('.')[1] || "";
+            for (let char of decimalPart) {
+                if (char === '0') zeros++;
+                else break;
+            }
+            charVal = -(zeros + 1); // -1, -2, etc.
+            step1HTML = `El número es < 1. Hay <b>${zeros}</b> cero(s) después del punto decimal antes de la primera cifra.<br>
+                         Fórmula: -(Ceros + 1) → -(${zeros} + 1) = <b>${charVal}</b> (o barra ${Math.abs(charVal)})`;
+        }
+
+        // Paso 2: Mantisa
+        mantVal = logVal - charVal; 
+        // Asegurar precisión de flotante
+        let mantStr = mantVal.toFixed(4).substring(1); // .XXXX
+
+        // Digitos significativos para la "tabla"
+        let cleanStr = inputStr.replace('.','').replace(/^0+/,'');
+        if (cleanStr.length > 4) cleanStr = cleanStr.substring(0,4);
+        while(cleanStr.length < 4) cleanStr += '0';
+
+        document.getElementById('step1-title').innerText = "📍 Paso 1: Característica (Posición del punto)";
+        document.getElementById('step1-text').innerHTML = step1HTML;
+
+        document.getElementById('step2-title').innerText = "📊 Paso 2: Mantisa (Secuencia de dígitos)";
+        document.getElementById('step2-text').innerHTML = `
+            Buscamos la secuencia de dígitos significativos <b>${cleanStr}</b> en la tabla.<br>
+            La tabla nos da la mantisa: <b>${mantStr}</b>`;
+
+        // Simulación Tabla
+        document.getElementById('table-sim').innerHTML = createMiniTable(cleanStr, mantStr.substring(1), LOG_MODE);
+
+        // Procedimiento
+        if (showProc) {
+            const procHTML = `
+                <b>Procedimiento Manual:</b><br>
+                1. Contar dígitos o ceros para la característica: <b>${charVal}</b>.<br>
+                2. Ignorar el punto decimal, buscar <b>${cleanStr.substring(0,2)}</b> en la primera columna de la tabla.<br>
+                3. Desplazarse a la columna <b>${cleanStr[2]}</b>.<br>
+                4. El valor de intersección es la mantisa <b>${mantStr}</b>.
+            `;
+            document.getElementById('procedure-area').innerHTML = procHTML;
+            document.getElementById('procedure-area').style.display = 'block';
+        }
+
+        // Resultado Final
+        let displayHTML = "";
+        if (charVal < 0) {
+            displayHTML = `<span class="bar-notation">${Math.abs(charVal)}</span>${mantStr}`;
+        } else {
+            displayHTML = `${charVal}${mantStr}`;
+        }
+        
+        document.getElementById('result-label-main').innerText = "Resultado (Logaritmo)";
+        document.getElementById('final-display').innerHTML = displayHTML;
+        document.getElementById('decimal-display').innerText = logVal.toFixed(5);
+        document.getElementById('info-box-content').innerHTML = `
+            <strong>ℹ️ Lectura:</strong> <span class="bar-notation">2</span>${mantStr} significa -2 + ${mantStr} = -${Math.abs(-2 + parseFloat(mantStr)).toFixed(4)}
+        `;
+    }
+
+    function calculateAntilogarithm(L, showProc) {
+        // L es el logaritmo total (ej: 2.3010 o -1.5)
+        // Paso 1: Separar Característica y Mantisa
+        // MATEMÁTICAMENTE: Mantisa siempre debe ser positiva [0, 1)
+        
+        let charVal = Math.floor(L);
+        let mantVal = L - charVal;
+        
+        // Corrección de punto flotante
+        mantVal = parseFloat(mantVal.toFixed(5));
+        let mantStr = mantVal.toFixed(4).substring(1); // .XXXX
+        
+        // Si el número era entero exacto (ej 2.0), mantisa 0
+        if (mantVal === 1) { // Caso borde flotante
+            charVal += 1;
+            mantVal = 0;
+            mantStr = ".0000";
+        }
+
+        const realNumber = Math.pow(10, L);
+        
+        // Generar digitos a partir de la mantisa para la "tabla"
+        // 10^mantisa nos da los dígitos (ej 10^0.3010 = 1.999...)
+        let digitsRaw = Math.pow(10, mantVal);
+        let digitsStr = digitsRaw.toFixed(4).replace('.','').substring(0,4);
+
+        document.getElementById('step1-title').innerText = "📍 Paso 1: Separar (C y M)";
+        let step1Explanation = `El valor ingresado es <b>${L}</b>.<br>`;
+        if (L < 0) {
+            step1Explanation += `⚠️ Al ser negativo, usamos el suelo (floor) para la característica y aseguramos mantisa positiva.<br>
+            Característica = floor(${L}) = <b>${charVal}</b>.<br>
+            Mantisa = ${L} - (${charVal}) = <b>${mantStr}</b>.`;
+        } else {
+            step1Explanation += `Característica (parte entera) = <b>${charVal}</b>.<br>
+            Mantisa (parte decimal) = <b>${mantStr}</b>.`;
+        }
+        document.getElementById('step1-text').innerHTML = step1Explanation;
+
+        document.getElementById('step2-title').innerText = "📊 Paso 2: Buscar en Tabla Inversa";
+        document.getElementById('step2-text').innerHTML = `
+            Buscamos la mantisa <b>${mantStr}</b> DENTRO del cuerpo de la tabla.<br>
+            Encontramos que corresponde a la secuencia de dígitos: <b>${digitsStr}</b>.`;
+
+        // Simulación Tabla (Modo Antilog: buscamos mantisa, obtenemos digitos)
+        document.getElementById('table-sim').innerHTML = createMiniTable(null, mantStr.substring(1), ANTILOG_MODE);
+
+        // Procedimiento
+        if (showProc) {
+            const procHTML = `
+                <b>Procedimiento Manual:</b><br>
+                1. Ubicar la mantisa <b>${mantStr}</b> en el cuerpo de la tabla.<br>
+                2. Mirar a los extremos para encontrar los dígitos correspondientes (<b>${digitsStr}</b>).<br>
+                3. Usar la característica <b>${charVal}</b> para colocar el punto decimal.<br>
+                Si C=${charVal}, movemos el punto ${charVal >= 0 ? charVal + 1 : 'hacia la izquierda'} posiciones.
+            `;
+            document.getElementById('procedure-area').innerHTML = procHTML;
+            document.getElementById('procedure-area').style.display = 'block';
+        }
+
+        // Resultado Final
+        document.getElementById('result-label-main').innerText = "Resultado (Número Original)";
+        // Formateo bonito del numero final
+        let finalFormat = realNumber.toPrecision(5).replace(/\.?0+$/,""); // Quitar ceros extra si no es científico
+        if(Math.abs(L) > 6) finalFormat = realNumber.toExponential(4);
+
+        document.getElementById('final-display').innerHTML = finalFormat;
+        document.getElementById('decimal-display').innerText = "N = 10^" + L;
+        
+        document.getElementById('info-box-content').innerHTML = `
+            <strong>ℹ️ Lógica:</strong> Los dígitos vienen de la Mantisa, la posición del punto viene de la Característica.
+        `;
+    }
+
+    // Event Listeners
     document.addEventListener('DOMContentLoaded', function() {
-        // Usar keydown para detectar Enter de forma fiable
+        // Change text on radio switch
+        document.querySelectorAll('input[name="mode"]').forEach(radio => {
+            radio.addEventListener('change', updateUIForMode);
+        });
+
         document.getElementById('numberInput').addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                calculateLog();
+                calculate();
             }
         });
+
         document.getElementById('showProcedure').addEventListener('change', function() {
-            // Recalcular para actualizar el área de procedimiento si está visible
-            calculateLog();
+            if (document.getElementById('result-area').style.display !== 'none') {
+                calculate(); // Recalcular para mostrar/ocultar proc
+            }
         });
+
         document.getElementById('darkMode').addEventListener('change', function(e){
-            if (this.checked) document.body.classList.add('dark'); else document.body.classList.remove('dark');
+            if (this.checked) document.body.classList.add('dark'); 
+            else document.body.classList.remove('dark');
         });
-        // Cambiar modo recalcula para actualizar etiquetas
-        document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', ()=> calculateLog()));
     });
 </script>
 
