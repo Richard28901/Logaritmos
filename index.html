@@ -705,7 +705,9 @@
             // Para antilog, la característica es la parte entera (floor)
             characteristic = Math.floor(L);
             const mant = +( (L - characteristic).toFixed(6) );
-            explanation = `Modo: <b>Antilogaritmo</b>.<br>Se separa el logaritmo en característica = <b>${characteristic}</b> y mantisa = <b>${mant.toFixed(6)}</b> (siempre positiva).`;
+            // Calcular el número original
+            const N = Math.pow(10, L);
+            explanation = `Modo: <b>Antilogaritmo</b>.<br>Se separa el logaritmo en característica = <b>${characteristic}</b> y mantisa = <b>${mant.toFixed(6)}</b>.<br>El número original es: <b>N = 10<sup>${L}</sup> = ${N.toPrecision(8)}</b>`;
         }
 
         // PASO 2: CALCULAR LA MANTISA
@@ -715,7 +717,13 @@
         const mantissaString = mantissaFormatted.substring(1); // ".XXXX" formato
 
         // Extraer dígitos significativos para explicación
-        const strN = input.toString().replace('.', '').replace(/^0+/, '');
+        let strN;
+        if (mode === 'antilog') {
+            // Para antilog, usar el número reconstruido
+            strN = Math.pow(10, logValue).toString().replace('.', '').replace(/^0+/, '');
+        } else {
+            strN = input.toString().replace('.', '').replace(/^0+/, '');
+        }
         let significantDigits = strN.substring(0, 4);
         significantDigits = significantDigits.padEnd(4, '0');
 
@@ -725,23 +733,39 @@
         document.getElementById('step1-text').innerHTML = explanation;
 
         // Explicación Paso 2
-        document.getElementById('step2-text').innerHTML = `
-            Para encontrar la mantisa, buscamos los dígitos significativos: <b>${significantDigits}</b> en una tabla de logaritmos.<br>
-            La mantisa (siempre positiva) es: <b>${mantissaString}</b><br>
-            <span style="font-size: 0.85rem; color: #555;">Matemáticamente: log(${n}) - ${characteristic} = ${logValue.toFixed(6)} - ${characteristic} = ${mantissa.toFixed(6)}</span>`;
+        if (mode === 'antilog') {
+            document.getElementById('step2-text').innerHTML = `
+                Para reconstruir el número, usamos la característica y mantisa:<br>
+                <b>N = 10<sup>${characteristic} + ${mantissaString}</sup> = ${Math.pow(10, logValue).toPrecision(8)}</b><br>
+                <span style="font-size: 0.85rem; color: #555;">Matemáticamente: 10<sup>${logValue.toFixed(6)}</sup> = ${Math.pow(10, logValue).toPrecision(8)}</span>`;
+        } else {
+            document.getElementById('step2-text').innerHTML = `
+                Para encontrar la mantisa, buscamos los dígitos significativos: <b>${significantDigits}</b> en una tabla de logaritmos.<br>
+                La mantisa (siempre positiva) es: <b>${mantissaString}</b><br>
+                <span style="font-size: 0.85rem; color: #555;">Matemáticamente: log(${n}) - ${characteristic} = ${logValue.toFixed(6)} - ${characteristic} = ${mantissa.toFixed(6)}</span>`;
+        }
 
         // Resultado final en notación de tabla
         let finalDisplay = "";
-        if (characteristic < 0) {
-            finalDisplay = `<span class="bar-notation">${Math.abs(characteristic)}</span>${mantissaString}`;
+        if (mode === 'antilog') {
+            // Mostrar el número reconstruido y la notación
+            finalDisplay = `<span style="font-size:1.15em;font-weight:700;color:var(--accent)">${Math.pow(10, logValue).toPrecision(8)}</span> <span style="font-size:0.95em;color:var(--text-light)">(N = 10<sup>${logValue.toFixed(4)}</sup>)</span>`;
         } else {
-            finalDisplay = `${characteristic}${mantissaString}`;
+            if (characteristic < 0) {
+                finalDisplay = `<span class="bar-notation">${Math.abs(characteristic)}</span>${mantissaString}`;
+            } else {
+                finalDisplay = `${characteristic}${mantissaString}`;
+            }
         }
         document.getElementById('final-display').innerHTML = finalDisplay;
 
         // Resultado en notación decimal (conversión estándar)
-        const decimalNotation = logValue.toFixed(4);
-        document.getElementById('decimal-display').innerText = decimalNotation;
+        if (mode === 'antilog') {
+            document.getElementById('decimal-display').innerText = Math.pow(10, logValue).toPrecision(8);
+        } else {
+            const decimalNotation = logValue.toFixed(4);
+            document.getElementById('decimal-display').innerText = decimalNotation;
+        }
 
         // Mostrar procedimiento manual si el usuario lo solicita
         if (showProcedure) {
